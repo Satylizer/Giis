@@ -9,19 +9,16 @@ class GraphicsEditor:
         self.root = root
         self.root.title("Графический редактор")
         
-        # Настройка размеров
         self.canvas_width = 800
         self.canvas_height = 600
         self.grid_step = 20
         
-        # Настройка переменных
-        self.mode = tk.StringVar(value="lines")  # Режим работы: lines/parametric/conic
-        self.curve_type = tk.StringVar(value="Bezier")  # Для параметрических кривых
+        self.mode = tk.StringVar(value="lines")
+        self.curve_type = tk.StringVar(value="Bezier")
         self.line_algorithm = tk.StringVar(value="DDA")
         self.conic_type = tk.StringVar(value="Circle")
         self.debug_mode = tk.BooleanVar(value=False)
         
-        # Переменные для построения
         self.control_points = []
         self.current_point = None
         self.start_point = None
@@ -31,7 +28,6 @@ class GraphicsEditor:
         self.edit_mode = tk.BooleanVar(value=False)
         self.snap_mode = tk.BooleanVar(value=True)
         
-        # Матрицы для кривых
         self.hermite_matrix = np.array([
             [2, -2, 1, 1],
             [-3, 3, -2, -1],
@@ -46,17 +42,14 @@ class GraphicsEditor:
             [1, 0, 0, 0]
         ])
         
-        # Окна и холсты
         self.debug_window = None
         self.debug_canvas = None
         self.grid_lines = []
         
-        # Создание интерфейса
         self.create_menu()
         self.create_toolbars()
         self.create_canvas()
         
-        # Привязка событий
         self.canvas.bind("<Button-1>", self.on_click)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
@@ -65,7 +58,6 @@ class GraphicsEditor:
     def create_menu(self):
         menubar = tk.Menu(self.root)
         
-        # Меню Файл
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Новый", command=self.new_canvas)
         file_menu.add_command(label="Очистить", command=self.clear_canvas)
@@ -73,21 +65,18 @@ class GraphicsEditor:
         file_menu.add_command(label="Выход", command=self.root.quit)
         menubar.add_cascade(label="Файл", menu=file_menu)
         
-        # Меню Кривые
         curve_menu = tk.Menu(menubar, tearoff=0)
         curve_menu.add_radiobutton(label="Эрмита", variable=self.curve_type, value="Hermite")
         curve_menu.add_radiobutton(label="Безье", variable=self.curve_type, value="Bezier")
         curve_menu.add_radiobutton(label="B-сплайн", variable=self.curve_type, value="B-spline")
         menubar.add_cascade(label="Кривые", menu=curve_menu)
         
-        # Меню для отрезков
         lines_menu = tk.Menu(menubar, tearoff=0)
         lines_menu.add_radiobutton(label="ЦДА", variable=self.line_algorithm, value="DDA")
         lines_menu.add_radiobutton(label="Брезенхем", variable=self.line_algorithm, value="Bresenham")
         lines_menu.add_radiobutton(label="Ву", variable=self.line_algorithm, value="Wu")
         menubar.add_cascade(label="Отрезки", menu=lines_menu)
         
-        # Меню для конических сечений
         conic_menu = tk.Menu(menubar, tearoff=0)
         conic_menu.add_radiobutton(label="Окружность", variable=self.conic_type, value="Circle")
         conic_menu.add_radiobutton(label="Эллипс", variable=self.conic_type, value="Ellipse")
@@ -95,7 +84,6 @@ class GraphicsEditor:
         conic_menu.add_radiobutton(label="Парабола", variable=self.conic_type, value="Parabola")
         menubar.add_cascade(label="Конические сечения", menu=conic_menu)
         
-        # Меню Настройки
         settings_menu = tk.Menu(menubar, tearoff=0)
         settings_menu.add_checkbutton(label="Привязка к сетке", variable=self.snap_mode)
         settings_menu.add_checkbutton(label="Режим отладки", variable=self.debug_mode, command=self.toggle_debug)
@@ -105,7 +93,6 @@ class GraphicsEditor:
         self.root.config(menu=menubar)
 
     def create_toolbars(self):
-        # Панель для выбора режима
         mode_toolbar = ttk.Frame(self.root)
         ttk.Label(mode_toolbar, text="Режим:").pack(side=tk.LEFT)
         ttk.Radiobutton(mode_toolbar, text="Кривые", variable=self.mode, value="parametric").pack(side=tk.LEFT)
@@ -131,18 +118,15 @@ class GraphicsEditor:
         
         if self.mode.get() == "parametric":
             if self.edit_mode.get():
-                # Проверяем, кликнули ли на контрольную точку
                 for i, point in enumerate(self.control_points):
                     if sqrt((point[0]-x)**2 + (point[1]-y)**2) < 10:
                         self.current_point = i
                         return
                 self.current_point = None
             else:
-                # Добавляем новую контрольную точку
                 self.control_points.append((x, y))
                 self.draw_curve()
         else:
-            # Запоминаем начальную точку для фигур/отрезков
             self.start_point = (x, y)
     
     def on_drag(self, event):
@@ -175,7 +159,6 @@ class GraphicsEditor:
     def draw_curve(self):
         self.canvas.delete("all")
         
-        # Рисуем контрольные точки
         for i, (x, y) in enumerate(self.control_points):
             self.canvas.create_oval(x-4, y-4, x+4, y+4, fill="red")
             self.canvas.create_text(x, y-10, text=str(i+1))
@@ -183,13 +166,11 @@ class GraphicsEditor:
         if len(self.control_points) < 2:
             return
             
-        # Рисуем контрольный полигон
         points = []
         for x, y in self.control_points:
             points.extend([x, y])
         self.canvas.create_line(*points, fill="gray", dash=(2,2))
         
-        # Рисуем кривую в зависимости от типа
         if self.curve_type.get() == "Hermite" and len(self.control_points) >= 4:
             self.draw_hermite_curve()
         elif self.curve_type.get() == "Bezier":
@@ -197,7 +178,6 @@ class GraphicsEditor:
         elif self.curve_type.get() == "B-spline" and len(self.control_points) >= 4:
             self.draw_bspline_curve()
         
-        # Подсвечиваем точки в режиме редактирования
         if self.edit_mode.get():
             self.highlight_control_points()
 
@@ -215,11 +195,9 @@ class GraphicsEditor:
             R4 = (self.control_points[start_idx + 3][0] - P4[0], 
                   self.control_points[start_idx + 3][1] - P4[1])
             
-            # Создаем матрицу геометрии
             G_x = np.array([[P1[0]], [P4[0]], [R1[0]], [R4[0]]])
             G_y = np.array([[P1[1]], [P4[1]], [R1[1]], [R4[1]]])
             
-            # Умножаем матрицу Эрмита на матрицы геометрии
             C_x = np.dot(self.hermite_matrix, G_x)
             C_y = np.dot(self.hermite_matrix, G_y)
             
@@ -256,8 +234,8 @@ class GraphicsEditor:
         if n < 4:
             return
             
-        k = 3  # Степень кривой (кубический сплайн)
-        knots = list(range(n + k + 1))  # Узловой вектор
+        k = 3
+        knots = list(range(n + k + 1))
         
         points = []
         for u in np.linspace(k, n, 100):
@@ -513,7 +491,6 @@ class GraphicsEditor:
         step = 1
         max_x = self.canvas_width // 2
         
-        # Правая ветвь
         x = a
         while x <= max_x:
             y = b * math.sqrt((x/a)**2 - 1)
@@ -521,7 +498,6 @@ class GraphicsEditor:
             points.append((x0 + x, y0 - int(y)))
             x += step
         
-        # Левая ветвь
         x = -a
         while x >= -max_x:
             y = b * math.sqrt((x/a)**2 - 1)
@@ -536,7 +512,6 @@ class GraphicsEditor:
         step = 1
         max_x = self.canvas_width // 2
         
-        # Правая ветвь
         x = 0
         while x <= max_x:
             y = (x**2) / (4*p)
@@ -544,7 +519,6 @@ class GraphicsEditor:
             points.append((x0 + x, y0 - int(y)))
             x += step
             
-        # Левая ветвь
         x = 0
         while x >= -max_x:
             y = (x**2) / (4*p)
@@ -588,12 +562,10 @@ class GraphicsEditor:
         if not self.debug_canvas:
             return
         
-        # Очистка предыдущей сетки
         for line in self.grid_lines:
             self.debug_canvas.delete(line)
         self.grid_lines = []
         
-        # Рисование новой сетки
         for i in range(0, self.canvas_width, self.grid_step):
             self.grid_lines.append(self.debug_canvas.create_line(
                 i, 0, i, self.canvas_height, fill="lightgray"))
@@ -620,7 +592,7 @@ class GraphicsEditor:
         
         scale = self.grid_step
         scaled_points = [(x//scale, y//scale) for x, y in self.steps]
-        self.steps = scaled_points
+        self.steps = scaled_points 
         self.current_step = 0
         
         self.animate_step()
@@ -634,7 +606,6 @@ class GraphicsEditor:
             scale = self.grid_step
             x, y = self.steps[self.current_step]
             
-            # Рисуем точку с анимацией
             self.debug_canvas.create_rectangle(
                 x*scale + 3, y*scale + 3,
                 x*scale + scale - 3, y*scale + scale - 3,
