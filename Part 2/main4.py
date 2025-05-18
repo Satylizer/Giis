@@ -2,9 +2,7 @@
 import pygame
 import numpy as np
 import math
-import os
 
-# --- Constants ---
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -20,7 +18,6 @@ INDEX_COLOR = MAGENTA
 
 DEFAULT_MODEL_FILENAME = "cube_data.txt"
 
-# --- Cube Definition (modified by loading/saving) ---
 initial_cube_vertices_3d = np.array([
     [-0.5, -0.5, -0.5], [ 0.5, -0.5, -0.5], [ 0.5,  0.5, -0.5], [-0.5,  0.5, -0.5],
     [-0.5, -0.5,  0.5], [ 0.5, -0.5,  0.5], [ 0.5,  0.5,  0.5], [-0.5,  0.5,  0.5]
@@ -33,37 +30,38 @@ initial_cube_vertices_homogeneous = np.hstack([
     initial_cube_vertices_3d, np.ones((initial_cube_vertices_3d.shape[0], 1))
 ])
 
-# --- Model Transform Matrix (Global) ---
-# Инициализируем здесь, чтобы была доступна глобально с самого начала
 model_transform_matrix = np.identity(4)
 
-# --- Transformation Matrix Functions ---
 def get_translation_matrix(dx, dy, dz):
     return np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0], [dx,dy,dz,1]])
+
 def get_scaling_matrix(sx, sy, sz):
     return np.array([[sx,0,0,0], [0,sy,0,0], [0,0,sz,0], [0,0,0,1]])
+
 def get_rotation_x_matrix(angle_rad):
     c, s = math.cos(angle_rad), math.sin(angle_rad)
     return np.array([[1,0,0,0], [0,c,s,0], [0,-s,c,0], [0,0,0,1]])
+
 def get_rotation_y_matrix(angle_rad):
     c, s = math.cos(angle_rad), math.sin(angle_rad)
     return np.array([[c,0,-s,0], [0,1,0,0], [s,0,c,0], [0,0,0,1]])
+
 def get_rotation_z_matrix(angle_rad):
     c, s = math.cos(angle_rad), math.sin(angle_rad)
     return np.array([[c,s,0,0], [-s,c,0,0], [0,0,1,0], [0,0,0,1]])
+
 def get_perspective_projection_matrix(focal_length_d):
     d = focal_length_d
     if abs(d) < 1e-5: d = np.sign(d) * 1e-5 if d != 0 else 1e-5
     return np.array([[1,0,0,0], [0,1,0,0], [0,0,0,1/d], [0,0,0,1]])
+
 def get_orthographic_projection_matrix():
     return np.array([[1,0,0,0], [0,1,0,0], [0,0,0,0], [0,0,0,1]])
 
-# --- Helper to render text ---
 def draw_text(surface, text, pos, font, color=WHITE, background=None):
     text_surface = font.render(text, True, color, background)
     surface.blit(text_surface, pos)
 
-# --- File Loading Function ---
 def load_model_from_file(filename):
     global initial_cube_vertices_3d, initial_cube_vertices_homogeneous, model_transform_matrix
     new_vertices_list = []
@@ -96,7 +94,7 @@ def load_model_from_file(filename):
         initial_cube_vertices_homogeneous = np.hstack([
             initial_cube_vertices_3d, np.ones((initial_cube_vertices_3d.shape[0], 1))
         ])
-        model_transform_matrix = np.identity(4) # Сброс при загрузке
+        model_transform_matrix = np.identity(4)
         msg = f"Модель успешно загружена из '{filename}'."
         print(msg)
         return True, msg
@@ -110,7 +108,6 @@ def load_model_from_file(filename):
         print(msg)
         return False, msg
 
-# --- File Saving Function ---
 def save_model_to_file(filename, vertices_3d_to_save):
     global initial_cube_vertices_3d, initial_cube_vertices_homogeneous, model_transform_matrix
     try:
@@ -126,7 +123,7 @@ def save_model_to_file(filename, vertices_3d_to_save):
         initial_cube_vertices_homogeneous = np.hstack([
             initial_cube_vertices_3d, np.ones((initial_cube_vertices_3d.shape[0], 1))
         ])
-        model_transform_matrix = np.identity(4) # Сброс после "запекания" трансформаций
+        model_transform_matrix = np.identity(4)
         msg = f"Модель успешно сохранена в '{filename}'."
         print(msg)
         return True, msg
@@ -135,9 +132,7 @@ def save_model_to_file(filename, vertices_3d_to_save):
         print(msg)
         return False, msg
 
-# --- Main Application ---
 def main():
-    # Используем глобальные переменные, чтобы функции загрузки/сохранения могли их изменять
     global initial_cube_vertices_3d, initial_cube_vertices_homogeneous, model_transform_matrix
 
     pygame.init()
@@ -146,10 +141,6 @@ def main():
     font_small = pygame.font.SysFont("monospace", 15)
     font_coords = pygame.font.SysFont("monospace", 12)
     clock = pygame.time.Clock()
-
-    # model_transform_matrix уже инициализирована глобально
-    # model_transform_matrix = np.identity(4) # Эту строку можно убрать, если не хотим сбрасывать при каждом запуске main
-                                           # Но для чистоты эксперимента лучше оставить, или сбрасывать при нажатии R
 
     projection_type = "perspective"
     PERSPECTIVE_D_TEXT = 2.0
@@ -171,7 +162,7 @@ def main():
                 if event.key == pygame.K_h: show_help = not show_help
                 if event.key == pygame.K_p: projection_type = "perspective"
                 if event.key == pygame.K_o: projection_type = "orthographic"
-                if event.key == pygame.K_r: model_transform_matrix = np.identity(4) # Сброс трансформаций
+                if event.key == pygame.K_r: model_transform_matrix = np.identity(4)
                 if event.key == pygame.K_c: show_world_coords = not show_world_coords
                 if event.key == pygame.K_i: show_indices = not show_indices
                 if event.key == pygame.K_l:
@@ -187,13 +178,7 @@ def main():
                 if event.key == pygame.K_F1: reflect_matrix = get_scaling_matrix(1, 1, -1)
                 if event.key == pygame.K_F2: reflect_matrix = get_scaling_matrix(1, -1, 1)
                 if event.key == pygame.K_F3: reflect_matrix = get_scaling_matrix(-1, 1, 1)
-                # Убедимся, что model_transform_matrix существует перед умножением
-                if 'model_transform_matrix' in globals() or 'model_transform_matrix' in locals():
-                     model_transform_matrix = model_transform_matrix @ reflect_matrix
-                else: # Этого не должно произойти, если она глобальна и инициализирована
-                    print("Ошибка: model_transform_matrix не определена перед отражением!")
-                    model_transform_matrix = reflect_matrix # Просто присвоим, чтобы избежать ошибки
-
+                model_transform_matrix = model_transform_matrix @ reflect_matrix
 
         keys = pygame.key.get_pressed()
 
@@ -204,13 +189,7 @@ def main():
         if keys[pygame.K_s]: current_rotation = get_rotation_x_matrix(-rotate_speed)
         if keys[pygame.K_q]: current_rotation = get_rotation_z_matrix(rotate_speed)
         if keys[pygame.K_e]: current_rotation = get_rotation_z_matrix(-rotate_speed)
-        # Убедимся, что model_transform_matrix существует перед умножением
-        if 'model_transform_matrix' in globals() or 'model_transform_matrix' in locals():
-            model_transform_matrix = model_transform_matrix @ current_rotation
-        else: # Этого не должно произойти, если она глобальна и инициализирована
-            print("Ошибка: model_transform_matrix не определена перед вращением!")
-            model_transform_matrix = current_rotation # Просто присвоим, чтобы избежать ошибки
-
+        model_transform_matrix = model_transform_matrix @ current_rotation
 
         current_scale = np.identity(4)
         scale_factor = 1.0
@@ -223,14 +202,8 @@ def main():
         if keys[pygame.K_x]:
             mod_x_scale = 1 + scale_speed if pygame.key.get_mods() & pygame.KMOD_SHIFT else 1 - scale_speed
             current_scale = current_scale @ get_scaling_matrix(mod_x_scale, 1, 1)
-        
-        # Убедимся, что model_transform_matrix существует перед умножением
-        if 'model_transform_matrix' in globals() or 'model_transform_matrix' in locals():
-            model_transform_matrix = model_transform_matrix @ current_scale
-        else: # Этого не должно произойти, если она глобальна и инициализирована
-            print("Ошибка: model_transform_matrix не определена перед масштабированием!")
-            model_transform_matrix = current_scale # Просто присвоим, чтобы избежать ошибки
 
+        model_transform_matrix = model_transform_matrix @ current_scale 
 
         transformed_vertices_h = initial_cube_vertices_homogeneous @ model_transform_matrix
 
@@ -268,8 +241,6 @@ def main():
                 if p1_idx < len(vertex_w_values) and p2_idx < len(vertex_w_values):
                     if vertex_w_values[p1_idx] <= epsilon or vertex_w_values[p2_idx] <= epsilon:
                         valid_edge = False
-                else:
-                    valid_edge = False
             
             if valid_edge and p1_idx < len(screen_points) and p2_idx < len(screen_points):
                 try:

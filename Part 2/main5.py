@@ -319,15 +319,15 @@ class GraphicsEditorApp:
         self.root.title("Простой Графический Редактор")
         self.root.geometry("1000x800")
 
-        self.current_tool = "none" # "draw_polygon", "draw_line", "point_in_poly_select_point", "line_intersect_select_line"
+        self.current_tool = "none"
         self.temp_points = []
-        self.polygons = [] # List of lists of points
-        self.lines = []    # List of pairs of points
-        self.convex_hulls = [] # List of lists of points (for hull visualizations)
-        self.intersection_points_viz = [] # For visualizing intersection points
-        self.normals_viz = [] # For visualizing normals
+        self.polygons = []
+        self.lines = []
+        self.convex_hulls = []
+        self.intersection_points_viz = []
+        self.normals_viz = []
 
-        self.selected_polygon_idx = None # For operations on a specific polygon
+        self.selected_polygon_idx = None
         self.selected_point_for_test = None
         self.selected_line_for_test = None
 
@@ -369,7 +369,7 @@ class GraphicsEditorApp:
         self.canvas = tk.Canvas(root, bg="white", width=800, height=600)
         self.canvas.pack(pady=20, expand=True, fill=tk.BOTH)
         self.canvas.bind("<Button-1>", self.on_canvas_click_left)
-        self.canvas.bind("<Button-3>", self.on_canvas_click_right) # Right-click
+        self.canvas.bind("<Button-3>", self.on_canvas_click_right)
 
         # --- Status Bar ---
         self.status_var = tk.StringVar()
@@ -381,7 +381,7 @@ class GraphicsEditorApp:
 
     def set_tool(self, tool_name):
         self.current_tool = tool_name
-        self.temp_points = [] # Reset temp points when changing tool
+        self.temp_points = []
         self.selected_point_for_test = None
         self.selected_line_for_test = None
         self.status_var.set(f"Инструмент: {tool_name}. Кликните на холсте.")
@@ -407,12 +407,10 @@ class GraphicsEditorApp:
         elif self.current_tool == "point_in_poly_select_point":
             self.selected_point_for_test = (x,y)
             self.status_var.set(f"Точка ({x},{y}) выбрана. Теперь выберите полигон (клик внутри).")
-            self.current_tool = "point_in_poly_select_polygon" # Next state
+            self.current_tool = "point_in_poly_select_polygon"
         elif self.current_tool == "point_in_poly_select_polygon":
             if self.selected_point_for_test and self.polygons:
-                # For simplicity, test against the last polygon or ask user to click one
-                # Let's test against the last one for now if no click selection implemented
-                target_polygon = self.polygons[-1] # Or implement polygon selection
+                target_polygon = self.polygons[-1]
                 is_inside = is_point_in_polygon(self.selected_point_for_test, target_polygon)
                 result_text = "внутри" if is_inside else "снаружи"
                 messagebox.showinfo("Результат: Точка в полигоне", 
@@ -420,7 +418,7 @@ class GraphicsEditorApp:
                 self.status_var.set(f"Точка {self.selected_point_for_test} {result_text} полигона. Выберите новый инструмент.")
             else:
                 self.status_var.set("Сначала выберите точку, затем убедитесь, что полигон нарисован.")
-            self.current_tool = "none" # Reset tool
+            self.current_tool = "none"
             self.selected_point_for_test = None
         elif self.current_tool == "line_intersect_select_line":
             self.temp_points.append((x,y))
@@ -428,7 +426,7 @@ class GraphicsEditorApp:
                 self.selected_line_for_test = list(self.temp_points)
                 self.temp_points = []
                 if self.polygons:
-                    target_polygon = self.polygons[-1] # Test with last polygon
+                    target_polygon = self.polygons[-1]
                     intersections = line_segment_intersects_polygon(
                         self.selected_line_for_test[0],
                         self.selected_line_for_test[1],
@@ -445,7 +443,6 @@ class GraphicsEditorApp:
                 else:
                     messagebox.showwarning("Ошибка", "Сначала нарисуйте полигон для проверки пересечения.")
                 self.current_tool = "none"
-                # self.selected_line_for_test will be drawn until cleared
             else:
                 self.status_var.set("Отрезок: кликните для второй точки.")
 
@@ -480,11 +477,11 @@ class GraphicsEditorApp:
         # Draw polygons
         for i, poly in enumerate(self.polygons):
             color = "black"
-            if self.selected_polygon_idx == i: color = "red" # Highlight selected
+            if self.selected_polygon_idx == i: color = "red"
             if len(poly) > 1 : self.canvas.create_polygon(poly, outline=color, fill="", width=2)
-            for p_idx, p_vertex in enumerate(poly): # Draw vertices
+            for p_idx, p_vertex in enumerate(poly):
                  self.canvas.create_oval(p_vertex[0]-2, p_vertex[1]-2, p_vertex[0]+2, p_vertex[1]+2, fill=color)
-                 # self.canvas.create_text(p_vertex[0]+5, p_vertex[1]-5, text=f"V{p_idx}")
+
 
 
         # Draw lines
@@ -580,15 +577,12 @@ class GraphicsEditorApp:
             all_points.extend(poly)
         for line in self.lines:
             all_points.extend(line)
-        # Add any temp points if user is drawing something
-        # all_points.extend(self.temp_points) # Decided against this for clarity
 
         if not all_points:
             messagebox.showwarning("Ошибка", "На холсте нет точек для построения оболочки.")
             return
         
-        # Remove duplicates
-        unique_points = sorted(list(set(map(tuple, all_points)))) # set of tuples
+        unique_points = sorted(list(set(map(tuple, all_points))))
 
         if len(unique_points) < 3:
             messagebox.showinfo("Выпуклая оболочка", "Нужно как минимум 3 уникальные точки для оболочки.")
@@ -602,7 +596,7 @@ class GraphicsEditorApp:
                 hull_points = jarvis_march(unique_points)
                 self.status_var.set(f"Выпуклая оболочка (Джарвис) построена: {len(hull_points)} вершин.")
             
-            self.convex_hulls = [hull_points] # Store as a list containing one hull
+            self.convex_hulls = [hull_points] 
         
         self.draw_all()
 
